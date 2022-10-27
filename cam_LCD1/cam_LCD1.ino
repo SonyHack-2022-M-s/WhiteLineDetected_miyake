@@ -6,45 +6,126 @@
 #define TFT_RST 8
 #define TFT_DC  9
 #define TFT_CS  10
+#define monocolor 0x7E0
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS ,TFT_DC ,TFT_RST);
 
 #define pixsize  76800
 uint16_t bmpMain[pixsize] , *bmp , *pG , *pMain ,Medi9[9];
-uint16_t pix,pixR,pixG,pixB,pixMax = 0,pixMini = 0x1F,tmp=0;
-int i = 0,j = 0,k = 0,count = 0,h=0,ti=0;
+uint16_t pix,pixR,pixG,pixB,pixMax = 0,pixMini = 0x1F,tmp=0,color;
+int i = 0,j = 0,k = 0,count = 0,h=0,ti=0,rightpoint=0,centerpoint=0,leftpoint=0;
 float m=0,delta1=0,delta2=0;
 
 /*
 void straight(){
-  j = 0;
-  for (i = 0; i <160; i++){
-    for (m = -200; m < 1; m++){
+  for (i = 0; i <320; i++){
+    for (m = -100; m < 1; m++){
       count = 0;
       delta1 = 0.00147*m;
       delta2 = 0;
-      if(ti = (int)(i/delta1) < 240){continue;}
-      for (h = 0; h < 241 ; h++){
-        if(*((pMain+i)+(uint16_t)(delta2))!=0){count++;}
+      if((int)(i/(-delta1)) < 240){continue;}
+      for (h = 0; h < 240 ; h++){
+        if(*((pMain+i)+(uint32_t)delta2) == 0xF800){count++;}
         delta2 = delta2+320+delta1;
         }
-      if(count > 30){
-        j = 1;
-        
+      if(count > 80){
+        delta2 = 0;
         for (h = 0; h < 240 ; h++){
-          *((pMain+i)+(uint16_t)(delta2)) = 0x7E0;
-          delta2 = delta2-320-delta1;
-        }
-        
-        
+          *((pMain+i)+(uint32_t)delta2) = 0x7E0;
+          delta2 = delta2+320+delta1;
+          }
         }
       }
     }
   }
 */
+
+void straight2(){
+  j = 100;
+  k = 0;
+  for (m = -300; m < 200; m++){
+  count = 0;
+  delta1 = 0.00147*m;
+  delta2 = 0;
+  for (h = 120; h < 240 ; h++){
+    if(*((pMain+38400+i)-2+(uint32_t)delta2) == 0x7E0){k++;}
+    if(*((pMain+38400+i)-1+(uint32_t)delta2) == 0x7E0){k++;}
+    if(*((pMain+38400+i)+(uint32_t)delta2) == 0x7E0){k++;}
+    if(*((pMain+38400+i)+1+(uint32_t)delta2) == 0x7E0){k++;}
+    if(*((pMain+38400+i)+2+(uint32_t)delta2) == 0x7E0){k++;}
+    if(k){
+      count++;
+      k = 0;
+      }
+    delta2 = delta2+320+delta1;
+    }
+  delta2 = 0;
+  for (h = 120; h > 0 ; h--){
+    if(*((pMain+38400+i)-2-(uint32_t)delta2) == 0x7E0){k++;}
+    if(*((pMain+38400+i)-1-(uint32_t)delta2) == 0x7E0){k++;}
+    if(*((pMain+38400+i)-(uint32_t)delta2) == 0x7E0){k++;}
+    if(*((pMain+38400+i)+1-(uint32_t)delta2) == 0x7E0){k++;}
+    if(*((pMain+38400+i)+2-(uint32_t)delta2) == 0x7E0){k++;}
+    if(k){
+      count++;
+      k = 0;
+      }
+    delta2 = delta2+320+delta1;
+    }
+    if (count >= j){
+      j = count;
+      continue;
+      }
+    if(count > 100){
+      if(m < -200){
+        leftpoint++;
+        color = 0xF800;
+        }else if(i > 160){
+        rightpoint++;
+        color = 0x1F;
+        }else{
+        centerpoint++;
+        color = 0xF81F;
+          }
+      delta2 = 0;
+      for (h = 120; h < 240 ; h++){
+        *((pMain+38400+i)+(uint32_t)delta2) = color;
+        delta2 = delta2+320+delta1;
+        }
+      delta2 = 0;
+      for (h = 120; h > 0 ; h--){
+        *((pMain+38400+i)-(uint32_t)delta2) = color;
+        delta2 = delta2+320+delta1;
+        }
+      break;
+      }
+    }
+  }
+
+void mifilter(){
+  for (i = 1 ; i < 319 ; i++){
+    if(*(pMain+38400+i) == monocolor){
+      count=0;
+      if(*(pMain+38400+i-321)==0){count++;}
+      if(*(pMain+38400+i-320)==0){count++;}
+      if(*(pMain+38400+i-319)==0){count++;}
+      if(count == 0){
+        continue;
+        }
+      if(*(pMain+38400+i+319)==0){count++;}
+      if(*(pMain+38400+i+320)==0){count++;}
+      if(*(pMain+38400+i+321)==0){count++;}
+      if(count == 0){
+        continue;
+        }
+      straight2();
+      }
+    }
+  }
+
 /*
 void MedianF(){
-  //MedianF;//色々修正いるんで使えません
+  //MedianF;
   for (i = 320; i < pixsize-320 ; i++){
     //if (i % 320 == 0 | i % 320 == 319) {continue;}
     Medi9[0] = *(pMain+i-321);
@@ -83,7 +164,7 @@ void MedianUpToDown(){
     if(*(pMain+i+319)==0){count++;}
     if(*(pMain+i+320)==0){count++;}
     if(*(pMain+i+321)==0){count++;}
-    *(pMain+i) = count>4 ? 0:0xF800;
+    *(pMain+i) = count>4 ? 0:monocolor;
     }
   }
 void MedianDownToUp(){
@@ -99,7 +180,7 @@ void MedianDownToUp(){
     if(*(pMain+i+319)==0){count++;}
     if(*(pMain+i+320)==0){count++;}
     if(*(pMain+i+321)==0){count++;}
-    *(pMain+i) = count>4 ? 0:0xF800;
+    *(pMain+i) = count>4 ? 0:monocolor;
     }
   }
 
@@ -125,16 +206,17 @@ void CamCB(CamImage img){
   //正規化～
   for (i = 0; i < pixsize ; i++){
     *pMain = 0x1F*(*pMain-pixMini)/(pixMax-pixMini);
-    *pMain = 20>*pMain ? 0 : 0xF800;
+    *pMain = 20>*pMain ? 0 : monocolor;
     pMain++;
     bmp++;
   }
   pMain -= pixsize;
   bmp -= pixsize;
 
+  //メディアンフィルタ
   MedianUpToDown();
   MedianDownToUp();
-/*
+
   //輪郭
   tmp =0;
   for (i = 0; i < pixsize ; i++){
@@ -142,23 +224,25 @@ void CamCB(CamImage img){
       *pMain = 0;
     }else{
       tmp =*pMain;
-      *pMain = 0xF800;
+      *pMain = monocolor;
       }
     pMain++;
   }
   pMain -= pixsize;
-*/
+
 //おえかき
 /*
   i = 160;
   delta2 = 0;
-  delta1 = 0.5;
+  delta1 = 0.00147*300;
 for (h = 0; h < 240 ; h++){
-  *(bmp+(uint16_t*)i+(uint16_t*)((uint16_t)delta2)) = 0x7E0;
+  *(pMain+i+(uint32_t)delta2) = 0x7E0;
   delta2 = delta2+320+delta1;
   }
 */
 //おえかき
+
+  mifilter();
   
   //Display～
   tft.drawRGBBitmap(0, 0, pMain, 320, 240);
