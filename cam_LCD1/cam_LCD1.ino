@@ -1,3 +1,11 @@
+/*
+//カメラのプレビュー画像から白線認識を行い，LCDに検出された白線を表示します．
+//車道左端から離れすぎると赤，
+//逆走している(右に白線がいる)と青，
+//正常な位置で紫，
+//の直線がLCDにマークされます．
+//"Adafruit_GFX.h"，"Adafruit_ILI9341.h"を使用しています．
+*/
 #include <Camera.h>
 #include <SPI.h>
 #include "Adafruit_GFX.h"
