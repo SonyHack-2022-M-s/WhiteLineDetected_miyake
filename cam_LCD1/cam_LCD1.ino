@@ -223,8 +223,8 @@ void CamCB(CamImage img){
   bmp -= pixsize;
 
   //メディアンフィルタ
-  //MedianUpToDown();
-  //MedianDownToUp();
+  MedianUpToDown();
+  MedianDownToUp();
 
   //輪郭
   /*
