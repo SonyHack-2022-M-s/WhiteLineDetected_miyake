@@ -223,11 +223,10 @@ void CamCB(CamImage img){
   bmp -= pixsize;
 
   //メディアンフィルタ
-  //MedianUpToDown();
-  //MedianDownToUp();
+  MedianUpToDown();
+  MedianDownToUp();
 
   //輪郭
-  /*
   tmp =0;
   for (i = 0; i < pixsize ; i++){
     if (*pMain == tmp){
@@ -239,7 +238,7 @@ void CamCB(CamImage img){
     pMain++;
   }
   pMain -= pixsize;
-  */
+  
 
 //おえかき
 /*
@@ -256,7 +255,7 @@ for (h = 0; h < 240 ; h++){
   mifilter();
   
   //Display～
-  tft.drawRGBBitmap(0, 0, bmp, 320, 240);
+  tft.drawRGBBitmap(0, 0, pMain, 320, 240);
 }
 
 void setup() {
