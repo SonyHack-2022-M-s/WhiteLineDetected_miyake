@@ -120,6 +120,7 @@ void mifilter(){
       if(count == 0){
         continue;
         }
+      count=0;
       if(*(pMain+38400+i+319)==0){count++;}
       if(*(pMain+38400+i+320)==0){count++;}
       if(*(pMain+38400+i+321)==0){count++;}
@@ -252,7 +253,7 @@ for (h = 0; h < 240 ; h++){
 */
 //おえかき
 
-  //mifilter();
+  mifilter();
   
   //Display～
   tft.drawRGBBitmap(0, 0, bmp, 320, 240);
