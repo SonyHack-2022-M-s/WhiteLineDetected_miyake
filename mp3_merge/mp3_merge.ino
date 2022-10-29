@@ -141,7 +141,7 @@ void mifilter(){
         continue;
         }
       straight2();
-      if (centerpoint){
+      if (centerpoint != 0){
         //警告しない
         Flag = 0;
       }else if (rightpoint !=0 && leftpoint == 0){//逆走
@@ -282,7 +282,7 @@ for (h = 0; h < 240 ; h++){
   mifilter();
   
   //Display～
-  tft.drawRGBBitmap(0, 0, bmp, 320, 240);
+  //tft.drawRGBBitmap(0, 0, bmp, 320, 240);
 }
 
 /**
@@ -362,11 +362,14 @@ void loop() {
   Serial.println("test");
   if (Flag == 1){// right -> 逆走
     rcount ++;
+    Serial.println(Flag);
   }else if (Flag == 2){
     lcount ++;
+    Serial.println(Flag);
   }else if (Flag == 0){
     rcount = 0;
     lcount = 0;
+    Serial.println(Flag);
     player_end(myFile2);
   }
   
@@ -386,5 +389,6 @@ void loop() {
     }
     player_continue(myFile2);
   }
+  
 
 }
