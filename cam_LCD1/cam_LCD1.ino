@@ -21,7 +21,8 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS ,TFT_DC ,TFT_RST);
 #define pixsize  76800
 uint16_t bmpMain[pixsize] , *bmp , *pG , *pMain ,Medi9[9];
 uint16_t pix,pixR,pixG,pixB,pixMax = 0,pixMini = 0x1F,tmp=0,color;
-int i = 0,j = 0,k = 0,count = 0,h=0,ti=0,rightpoint=0,centerpoint=0,leftpoint=0;
+int i = 0,j = 0,k = 0,count = 0,h=0,ti=0;
+bool rightpoint=false,centerpoint=false,leftpoint=false;
 float m=0,delta1=0,delta2=0;
 
 /*
@@ -86,23 +87,23 @@ void straight2(){
       }
     if(count > 100){
       if(m < -200){
-        leftpoint++;
+        leftpoint = true;
         color = 0xF800;
         }else if(i > 160){
-        rightpoint++;
+        rightpoint = true;
         color = 0x1F;
         }else{
-        centerpoint++;
+        centerpoint = true;
         color = 0xF81F;
           }
       delta2 = 0;
       for (h = 120; h < 240 ; h++){
-        *((pMain+38400+i)+(uint32_t)delta2) = color;
+        *((bmp+38400+i)+(uint32_t)delta2) = color;
         delta2 = delta2+320+delta1;
         }
       delta2 = 0;
       for (h = 120; h > 0 ; h--){
-        *((pMain+38400+i)-(uint32_t)delta2) = color;
+        *((bmp+38400+i)-(uint32_t)delta2) = color;
         delta2 = delta2+320+delta1;
         }
       break;
@@ -111,6 +112,11 @@ void straight2(){
   }
 
 void mifilter(){
+  
+  rightpoint = false;
+  leftpoint = false;
+  centerpoint = false;
+  
   for (i = 1 ; i < 319 ; i++){
     if(*(pMain+38400+i) == monocolor){
       count=0;
@@ -130,6 +136,9 @@ void mifilter(){
       straight2();
       }
     }
+    
+
+      
   }
 
 /*
@@ -227,7 +236,7 @@ void CamCB(CamImage img){
   MedianDownToUp();
 
   //輪郭
-  /*
+  
   tmp =0;
   for (i = 0; i < pixsize ; i++){
     if (*pMain == tmp){
@@ -239,7 +248,7 @@ void CamCB(CamImage img){
     pMain++;
   }
   pMain -= pixsize;
-  */
+  
 
 //おえかき
 /*
@@ -260,6 +269,7 @@ for (h = 0; h < 240 ; h++){
 }
 
 void setup() {
+  pinMode(3, OUTPUT);
   pMain = bmpMain;
   Serial.begin(115200);
   Serial.println("start");
@@ -279,4 +289,13 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  
+    if(centerpoint == false && rightpoint == true && leftpoint == false){
+      tone(3,1000,1000);
+      }
+    if(centerpoint == false && rightpoint == false && leftpoint == true){
+      tone(3,1000,1000);
+      }
+      
+      
 }
