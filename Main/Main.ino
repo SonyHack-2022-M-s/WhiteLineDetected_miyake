@@ -29,9 +29,8 @@ int subcre1 =1 ,subcre2 =2;
 
 #include <MP.h>
 int8_t     MY_MSGID =   10;
-
 int     ret;
-uint32_t msg;
+uint32_t msg = 0;
 uint64_t myTime1,myTime2;
 int      subid;
 int8_t   msgid;
@@ -125,9 +124,16 @@ void CamCB(CamImage img){
   pixAve = (pixSum1+pixSum2)/38400;
 
   ret = MP.Send(MY_MSGID, pixAve, subcre1);
-  ret = MP.Send(MY_MSGID, pixAve,subcre2);
+  ret = MP.Send(MY_MSGID, pixAve, subcre2);
 
+//二値化完了
+  ret = MP.Recv(&msgid, &msg, subcre1);
+  ret = MP.Recv(&msgid, &msg, subcre2);
 
+  ret = MP.Send(MY_MSGID, msg, subcre1);
+  ret = MP.Send(MY_MSGID, msg, subcre2);
+
+//SubCore完了
   ret = MP.Recv(&msgid, &msg, subcre1);
   ret = MP.Recv(&msgid, &msg, subcre2);
 
