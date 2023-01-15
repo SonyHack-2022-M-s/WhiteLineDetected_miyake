@@ -8,15 +8,15 @@
 */
 #include <Camera.h>
 #include <SPI.h>
-#include "Adafruit_GFX.h"
-#include "Adafruit_ILI9341.h"
+//#include "Adafruit_GFX.h"
+//#include "Adafruit_ILI9341.h"
 
-#define TFT_RST 8
-#define TFT_DC  9
-#define TFT_CS  10
+//#define TFT_RST 8
+//#define TFT_DC  9
+//#define TFT_CS  10
 #define monocolor 0x7E0
 
-Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS ,TFT_DC ,TFT_RST);
+//Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS ,TFT_DC ,TFT_RST);
 
 #define pixsize  76800
 uint16_t bmpMain[pixsize] , *bmp , *pG ,*pMain ,Medi9[9];
@@ -118,28 +118,32 @@ void CamCB(CamImage img){
   ret = MP.Send(MY_MSGID, ppixSum,subcre2);
 */
 
+//平均値計算
   ret = MP.Recv(&msgid, &pixSum1, subcre1);
   ret = MP.Recv(&msgid, &pixSum2, subcre2);
-
   pixAve = (pixSum1+pixSum2)/38400;
-
   ret = MP.Send(MY_MSGID, pixAve, subcre1);
   ret = MP.Send(MY_MSGID, pixAve, subcre2);
 
-//二値化完了
-  ret = MP.Recv(&msgid, &msg, subcre1);
-  ret = MP.Recv(&msgid, &msg, subcre2);
-
-  ret = MP.Send(MY_MSGID, msg, subcre1);
-  ret = MP.Send(MY_MSGID, msg, subcre2);
+//Filter完了
+  ret = MP.Recv(&msgid, &pixSum1, subcre1);
+  ret = MP.Recv(&msgid, &pixSum2, subcre2);
 
 //SubCore完了
   ret = MP.Recv(&msgid, &msg, subcre1);
   ret = MP.Recv(&msgid, &msg, subcre2);
 
   myTime2 = micros();
-  MPLog(",%"PRIu64",%"PRIu64"\n", myTime1, myTime2);
-  tft.drawRGBBitmap(0, 0, pMain, 320, 240);
+//  MPLog(",%"PRIu64",%"PRIu64"\n", myTime1, myTime2);
+
+  MP.RecvTimeout(MP_RECV_POLLING);
+  ret = MP.Recv(&msgid, &msg,3);
+  MP.RecvTimeout(MP_RECV_BLOCKING);
+  if(ret != 10){
+    ret = MP.Send(MY_MSGID,pMain,3);
+  }
+
+//  tft.drawRGBBitmap(0, 0, pMain, 320, 240);
 }
 
 void setup() {
@@ -149,9 +153,10 @@ void setup() {
 
   MP.begin(1);
   MP.begin(2);
+  MP.begin(3);
 
-  tft.begin();
-  tft.setRotation(3);
+//  tft.begin();
+//  tft.setRotation(3);
 
   theCamera.begin(
     1,
