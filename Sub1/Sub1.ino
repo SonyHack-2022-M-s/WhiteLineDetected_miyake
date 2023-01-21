@@ -3,10 +3,12 @@
 #define monocolor 0x7E0
 
 #define pixsize  38400 //76800/2
-uint16_t *bmp , *pMain;
-uint16_t pixR,pixG,pixB,pixAve = 0;
+uint16_t *bmp , *pMain, *pMainf, *pPixNum;
+uint16_t pixR,pixG,pixB,pixAve = 0,scnt;
 uint32_t pixSum1 = 0,Recv32 = 0;
 int i = 0,j = 0,k = 0;
+
+int fxy;
 
 unsigned short int count = 0, co[3];
 
@@ -14,6 +16,7 @@ unsigned short int count = 0, co[3];
 //#include <inttypes.h>
 int     ret;
 uint32_t  msg = 0;
+int8_t     MY_MSGID =   10;
 int8_t   msgid = 0;
 
 void setup() { 
@@ -25,6 +28,8 @@ void loop() {
  //   MPLog("Recv bmp %d\n",ret);
   ret = MP.Recv(&msgid, &pMain);//2
  //   MPLog("Recv pMain %d\n",ret);
+  ret = MP.Recv(&msgid, &pPixNum);//7
+ //   MPLog("Recv pPixNum %d\n",ret);
 
 //Ave
   for (i = 0; i < pixsize ; i++){
@@ -43,7 +48,7 @@ void loop() {
 
 
  // MPLog("time1 %"PRIu64"\n",micros());
-  ret = MP.Send(msgid, pixSum1);//3
+  ret = MP.Send(MY_MSGID, pixSum1);//3
  //   MPLog("Send pixSum1 %d\n",ret);
   ret = MP.Recv(&msgid, &Recv32);//4
  //   MPLog("Recv pixSum2 %d\n",ret);
@@ -109,11 +114,18 @@ void loop() {
     count++;
     if(count == 3){count = 0;}
     }
-  ret = MP.Send(msgid, 10);//5
+  ret = MP.Send(MY_MSGID, 10);//5
 
-//stright center
-
-
+//stright center st
+  ret = MP.Recv(&msgid, &Recv32);//11
+  while(ret == 1){
+    scnt = (uint16_t)Recv32;
+    MPLog(" msgid= %d \n", scnt);
+    strightSub1();
+    ret = MP.Send(MY_MSGID, 10);//12
+    ret = MP.Recv(&msgid, &Recv32);//11
+    }
+//stright center ed
 
 /*
   //輪郭
@@ -135,3 +147,50 @@ void loop() {
   ret = MP.Send(msgid, 10);//6
   // put your main code here, to run repeatedly:
 }
+
+void strightSub1(){
+//dx<0
+  for(i = -119; i < 0 ; i++){
+    fxy = 0;
+    pMainf = pMain + 38400 + scnt;
+    for(k = 0 ; k <119 ; k++){
+      fxy = fxy-i-i-120;
+      if(fxy < 0){
+        pMainf = pMainf-320;
+        fxy = fxy + 120;
+        if(*pMainf != 0){(*pPixNum)++;}
+        }else{
+          pMainf = pMainf-321;
+          fxy = fxy - 120;
+          if(*pMainf != 0){(*pPixNum)++;}
+          }
+      }
+    pPixNum++;
+    }
+//dx=0
+  pMainf = pMain + 38400 + scnt;
+  for(k = 0 ; k <119 ; k++){
+    pMainf -= 320;
+    if(*pMainf != 0){(*pPixNum)++;}
+    }
+  pPixNum++;
+//dx>0
+  for(i = 1; i < 120 ; i++){
+    fxy = 0;
+    pMainf = pMain + 38400 + scnt;
+    for(k = 0 ; k <119 ; k++){
+      fxy = fxy+120-i-i;
+      if(fxy < 0){
+        pMainf = pMainf-319;
+        fxy = fxy + 120;
+        if(*pMainf != 0){(*pPixNum)++;}
+        }else{
+          pMainf = pMainf-320;
+          fxy = fxy - 120;
+          if(*pMainf != 0){(*pPixNum)++;}
+          }
+      }
+    pPixNum++;
+    }
+  pPixNum -= 239;
+  }
