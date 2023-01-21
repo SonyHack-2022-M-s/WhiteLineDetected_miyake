@@ -21,9 +21,9 @@ void setup() {
 }
 
 void loop() {
-  ret = MP.Recv(&msgid, &bmp);
+  ret = MP.Recv(&msgid, &bmp);//1
  //   MPLog("Recv bmp %d\n",ret);
-  ret = MP.Recv(&msgid, &pMain);
+  ret = MP.Recv(&msgid, &pMain);//2
  //   MPLog("Recv pMain %d\n",ret);
 
 //Ave
@@ -43,9 +43,9 @@ void loop() {
 
 
  // MPLog("time1 %"PRIu64"\n",micros());
-  ret = MP.Send(msgid, pixSum1);
+  ret = MP.Send(msgid, pixSum1);//3
  //   MPLog("Send pixSum1 %d\n",ret);
-  ret = MP.Recv(&msgid, &Recv32);
+  ret = MP.Recv(&msgid, &Recv32);//4
  //   MPLog("Recv pixSum2 %d\n",ret);
 
   pixAve = (uint16_t)Recv32;
@@ -109,7 +109,7 @@ void loop() {
     count++;
     if(count == 3){count = 0;}
     }
-  ret = MP.Send(msgid, 10);
+  ret = MP.Send(msgid, 10);//5
 
 //stright center
 
@@ -132,6 +132,6 @@ void loop() {
 
 
 //MPLog("time2 %"PRIu64"\n",micros());
-  ret = MP.Send(msgid, 10);
+  ret = MP.Send(msgid, 10);//6
   // put your main code here, to run repeatedly:
 }

@@ -24,30 +24,30 @@ void CamCB(CamImage img){
   myTime1 = micros();
 
   //// put your main code here, to run repeatedly:
-  ret = MP.Send(MY_MSGID, bmp, subcre1);
+  ret = MP.Send(MY_MSGID, bmp, subcre1);//1-1
  //   MPLog("Send1 bmp %d\n",ret);
-  ret = MP.Send(MY_MSGID, bmp, subcre2);
+  ret = MP.Send(MY_MSGID, bmp, subcre2);//2-1
  //   MPLog("Send2 bmp %d\n",ret);
-  ret = MP.Send(MY_MSGID, pMain, subcre1);
+  ret = MP.Send(MY_MSGID, pMain, subcre1);//1-2
  //   MPLog("Send1 pMain %d\n",ret);
-  ret = MP.Send(MY_MSGID, pMain,subcre2);
+  ret = MP.Send(MY_MSGID, pMain,subcre2);//2-2
  //   MPLog("Send2 pMain %d\n",ret);
 
 
 //平均値計算
-  ret = MP.Recv(&msgid, &pixSum1, subcre1);
-  ret = MP.Recv(&msgid, &pixSum2, subcre2);
+  ret = MP.Recv(&msgid, &pixSum1, subcre1);//1-3
+  ret = MP.Recv(&msgid, &pixSum2, subcre2);//2-3
   pixAve = (pixSum1+pixSum2)/38400;
-  ret = MP.Send(MY_MSGID, pixAve, subcre1);
-  ret = MP.Send(MY_MSGID, pixAve, subcre2);
+  ret = MP.Send(MY_MSGID, pixAve, subcre1);//1-4
+  ret = MP.Send(MY_MSGID, pixAve, subcre2);//2-4
 
 //Filter完了
-  ret = MP.Recv(&msgid, &pixSum1, subcre1);
-  ret = MP.Recv(&msgid, &pixSum2, subcre2);
+  ret = MP.Recv(&msgid, &pixSum1, subcre1);//1-5
+  ret = MP.Recv(&msgid, &pixSum2, subcre2);//2-5
 
 //SubCore完了
-  ret = MP.Recv(&msgid, &msg, subcre1);
-  ret = MP.Recv(&msgid, &msg, subcre2);
+  ret = MP.Recv(&msgid, &msg, subcre1);//1-6
+  ret = MP.Recv(&msgid, &msg, subcre2);//2-6
 
   myTime2 = micros();
 //  MPLog(",%"PRIu64",%"PRIu64"\n", myTime1, myTime2);
