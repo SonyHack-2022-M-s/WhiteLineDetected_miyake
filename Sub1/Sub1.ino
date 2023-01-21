@@ -1,12 +1,11 @@
 
-#include <SPI.h>
-#include <inttypes.h>
+//#include <inttypes.h>
 #define monocolor 0x7E0
 
 #define pixsize  38400 //76800/2
 uint16_t *bmp , *pMain;
-uint16_t pix,pixR,pixG,pixB,pixAve = 0,tmp=0;
-uint32_t pixSum1 = 0, *pixSum,pixAve32 = 0;
+uint16_t pixR,pixG,pixB,pixAve = 0;
+uint32_t pixSum1 = 0,Recv32 = 0;
 int i = 0,j = 0,k = 0;
 
 unsigned short int count = 0, co[3];
@@ -46,10 +45,10 @@ void loop() {
  // MPLog("time1 %"PRIu64"\n",micros());
   ret = MP.Send(msgid, pixSum1);
  //   MPLog("Send pixSum1 %d\n",ret);
-  ret = MP.Recv(&msgid, &pixAve32);
+  ret = MP.Recv(&msgid, &Recv32);
  //   MPLog("Recv pixSum2 %d\n",ret);
 
-  pixAve = (uint16_t)pixAve32;
+  pixAve = (uint16_t)Recv32;
   
   //MPLog("pixSum1=%"PRIu32"\n", pixSum1);
   //MPLog("pixSum2=%"PRIu32"\n", pixSum2);
@@ -85,8 +84,8 @@ void loop() {
     if(*(pMain+i+2-320)==0){co[count]++;}
     if(*(pMain+i+2)==0){co[count]++;}
     if(*(pMain+i+2+320)==0){co[count]++;}
-    
-    count = (count+1)%3;
+    count++;
+    if(count == 3){count = 0;}
     }
 
   co[3] = {0};
@@ -107,8 +106,8 @@ void loop() {
     if(*(pMain+i+2-320)==0){co[count]++;}
     if(*(pMain+i+2)==0){co[count]++;}
     if(*(pMain+i+2+320)==0){co[count]++;}
-    
-    count = (count+1)%3;
+    count++;
+    if(count == 3){count = 0;}
     }
   ret = MP.Send(msgid, 10);
 
