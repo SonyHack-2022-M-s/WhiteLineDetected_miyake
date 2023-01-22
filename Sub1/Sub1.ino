@@ -1,12 +1,13 @@
 
 //#include <inttypes.h>
 #define monocolor 0x7E0
+#define monocolor2 0xF800
 
 #define pixsize  38400 //76800/2
 uint16_t *bmp , *pMain, *pMainf, *pPixNum;
 uint16_t pixR,pixG,pixB,pixAve = 0,scnt;
 uint32_t pixSum1 = 0,Recv32 = 0;
-int i = 0,j = 0,k = 0;
+int i = 0,j = 0,k = 0,strightDelta;
 
 int fxy;
 
@@ -26,7 +27,7 @@ void setup() {
 void loop() {
   ret = MP.Recv(&msgid, &bmp);//1
  //   MPLog("Recv bmp %d\n",ret);
-  ret = MP.Recv(&msgid, &pMain);//2
+  ret = MP.Recv(&msgid, &pMain);//2 
  //   MPLog("Recv pMain %d\n",ret);
   ret = MP.Recv(&msgid, &pPixNum);//7
  //   MPLog("Recv pPixNum %d\n",ret);
@@ -93,6 +94,7 @@ void loop() {
     if(count == 3){count = 0;}
     }
 
+
   co[3] = {0};
   if(*(pMain+320-320)==0){co[0]++;}
   if(*(pMain+321-320)==0){co[1]++;}
@@ -114,14 +116,20 @@ void loop() {
     count++;
     if(count == 3){count = 0;}
     }
+
   ret = MP.Send(MY_MSGID, 10);//5
 
 //stright center st
   ret = MP.Recv(&msgid, &Recv32);//11
-  while(ret == 1){
+  while(ret != 3){
+    if(ret == 1){
     scnt = (uint16_t)Recv32;
     MPLog(" msgid= %d \n", scnt);
     strightSub1();
+    }else{
+      strightDelta = (int)Recv32-119;
+      drawStrightSub1();
+      }
     ret = MP.Send(MY_MSGID, 10);//12
     ret = MP.Recv(&msgid, &Recv32);//11
     }
@@ -194,3 +202,54 @@ void strightSub1(){
     }
   pPixNum -= 239;
   }
+
+void drawStrightSub1(){
+  MPLog(" pMain= %d \n", pMain);
+  if(strightDelta < 0){
+    fxy = 0;
+    pMainf = pMain + 38400 + scnt;
+    for(k = 0 ; k <119 ; k++){
+      fxy = fxy-strightDelta-strightDelta-120;
+      if(fxy < 0){
+        pMainf = pMainf-320;
+        fxy = fxy + 120;
+        *pMainf = monocolor2;
+        }else{
+          pMainf = pMainf-321;
+          fxy = fxy - 120;
+          *pMainf = monocolor2;
+          }
+      }
+    }else if(strightDelta == 0){
+      pMainf = pMain + 38400 + scnt;
+      for(k = 0 ; k <119 ; k++){
+        pMainf -= 320;
+        *pMainf = monocolor2;
+        }
+      }else{
+        fxy = 0;
+        pMainf = pMain + 38400 + scnt;
+        for(k = 0 ; k <119 ; k++){
+          fxy = fxy+120-strightDelta-strightDelta;
+          if(fxy < 0){
+            pMainf = pMainf-319;
+            fxy = fxy + 120;
+            *pMainf = monocolor2;
+            }else{
+              pMainf = pMainf-320;
+              fxy = fxy - 120;
+              *pMainf = monocolor2;
+              }
+          }
+        }
+  }
+
+
+
+
+
+
+
+
+
+  

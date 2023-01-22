@@ -4,10 +4,10 @@
 
 #define pixsize  76800
 uint16_t bmpMain[pixsize] , *bmp ,*pMain ;
-uint16_t stPixNum[239] ={0} , *pPixNum ,test;
+uint16_t stPixNum[239] ={0} , *pPixNum ,maxPixNum;
 uint32_t pixSum1 = 0,pixSum2 = 0, pixAve = 0;
-int i = 0,j = 0,k = 0,m = 0,n = 0,h = 0, strightDelta;
-bool col = false , st = false;
+int i = 0,j = 0,k = 0,m = 0,n = 0,h = 0, strightDelta, strightDelta2;
+bool col = false , st = false , jug1 = false;
 
 unsigned short int count = 0;
 
@@ -72,7 +72,13 @@ void CamCB(CamImage img){
         ret = MP.Send(1, (uint32_t)j, subcre2);//2-11
         ret = MP.Recv(&msgid, &msg, subcre1);//1-12
         ret = MP.Recv(&msgid, &msg, subcre2);//2-12
-        stright3();
+        stright4(); //又は stright3()
+        if(jug1 == true){
+          ret = MP.Send(2, (uint32_t)strightDelta, subcre1);//1-11
+          ret = MP.Send(2, (uint32_t)strightDelta, subcre2);//2-11
+          ret = MP.Recv(&msgid, &msg, subcre1);//1-12
+          ret = MP.Recv(&msgid, &msg, subcre2);//2-12
+          }
         count++;
         if(count == 4){
           break;
@@ -88,8 +94,8 @@ void CamCB(CamImage img){
     pMain++;
     }
     pMain = pMain-i;
-    ret = MP.Send(2, (uint32_t)j, subcre1);    //1-11
-    ret = MP.Send(2, (uint32_t)j, subcre2);    //2-11
+    ret = MP.Send(3, (uint32_t)j, subcre1);    //1-11
+    ret = MP.Send(3, (uint32_t)j, subcre2);    //2-11
     //MP.Send(100, &j, subcre1);
     
   pMain -= 38400;
@@ -113,12 +119,14 @@ void CamCB(CamImage img){
 
 void stright3(){
   st = false;
+  jug1 = false;
   for(n = 0; n < 239 ; n++){
-    if(*pPixNum < 120){//本来は120
+    if(*pPixNum < 100){//本来は120
       if(st == true){
         st = false;
         strightDelta = (strightDelta + n )/2;
         MPLog("strightDelta = %d\n", strightDelta);
+        jug1 = true;
         break;
         }
       }else{
@@ -134,6 +142,23 @@ void stright3(){
     *pPixNum = 0;
     pPixNum++;
     }
+  pPixNum -= 239;
+  }
+
+void stright4(){
+  jug1 = false;
+  maxPixNum = 0;
+  strightDelta = 0;
+  for(n = 0; n < 239 ; n++){
+    if(*pPixNum > maxPixNum && *pPixNum > 100){//本来は120
+      strightDelta = n;
+      maxPixNum = *pPixNum;
+      jug1 = true;
+      }else if(*pPixNum == maxPixNum){strightDelta2 = n;}
+    *pPixNum = 0;
+    pPixNum++;
+    }
+  strightDelta = (strightDelta + strightDelta2)/2;
   pPixNum -= 239;
   }
 

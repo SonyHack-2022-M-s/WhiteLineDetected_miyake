@@ -1,12 +1,13 @@
 
 //#include <inttypes.h>
 #define monocolor 0x1F
+#define monocolor2 0xF800
 
 #define pixsize  38400 //76800/2
 uint16_t *bmp , *pMain, *pMainf, *pPixNum;
 uint16_t pixR,pixG,pixB,pixAve = 0,scnt;
 uint32_t pixSum2 = 0,Recv32 = 0;
-int i = 0,j = 0,k = 0;
+int i = 0,j = 0,k = 0,strightDelta;
 
 int fxy;
 
@@ -27,6 +28,7 @@ void loop(){
   ret = MP.Recv(&msgid, &bmp);//1
  //   MPLog("Recv bmp %d\n",ret);
   ret = MP.Recv(&msgid, &pMain);//2
+  MPLog(" pMain1= %d \n", pMain);
  //   MPLog("Recv pMain %d\n",ret);
   ret = MP.Recv(&msgid, &pPixNum);//7
  //   MPLog("Recv pPixNum %d\n",ret);
@@ -119,10 +121,15 @@ void loop(){
 
 //stright center st
   ret = MP.Recv(&msgid, &Recv32);//11
-  while(ret == 1){
+  while(ret != 3){
+    if(ret == 1){
     scnt = (uint16_t)Recv32;
     MPLog(" msgid= %d \n", scnt);
     strightSub2();
+    }else{
+      strightDelta = (int)Recv32-119;
+      drawStrightSub2();
+      }
     ret = MP.Send(MY_MSGID, 10);//12
     ret = MP.Recv(&msgid, &Recv32);//11
     }
@@ -150,22 +157,40 @@ void loop(){
 }
 
 void strightSub2(){
+  pPixNum += 239;
+//dx>0
+  for(i = 119; i > 0  ; i--){
+    fxy = 0;
+    pMainf = pMain + scnt;
+    for(k = 0 ; k <118 ; k++){
+      fxy = fxy-120+i+i;
+      if(fxy < 0){
+        pMainf = pMainf+320;
+        fxy = fxy + 120;
+        if(*pMainf != 0){(*pPixNum)++;}
+        }else{
+          pMainf = pMainf+319;
+          fxy = fxy - 120;
+          if(*pMainf != 0){(*pPixNum)++;}
+          }
+      }
+    pPixNum--;
+    }
 //dx=0
-  pPixNum += 119;
-  pMainf = pMain + 38400 + scnt;
-  for(k = 0 ; k <119 ; k++){
+  pMainf = pMain + scnt;
+  for(k = 0 ; k <118 ; k++){
     pMainf += 320;
     if(*pMainf != 0){(*pPixNum)++;}
     }
-  pPixNum++;
-//dx>0
-  for(i = 1; i < 120 ; i++){
+  pPixNum--;
+//dx<0
+  for(i = 1; i > -119 ; i--){
     fxy = 0;
-    pMainf = pMain + 38400 + scnt;
+    pMainf = pMain + scnt;
     for(k = 0 ; k <119 ; k++){
-      fxy = fxy+120-i-i;
+      fxy = fxy+i+i+120;
       if(fxy < 0){
-        pMainf = pMainf+319;
+        pMainf = pMainf+321;
         fxy = fxy + 120;
         if(*pMainf != 0){(*pPixNum)++;}
         }else{
@@ -174,26 +199,48 @@ void strightSub2(){
           if(*pMainf != 0){(*pPixNum)++;}
           }
       }
-    pPixNum++;
+    pPixNum--;
     }
-    pPixNum -= 239;
-//dx<0
-  for(i = -119; i < 0 ; i++){
+  }
+
+void drawStrightSub2(){
+  MPLog(" pMain= %d \n", pMain);
+  if(strightDelta > 0){
     fxy = 0;
-    pMainf = pMain + 38400 + scnt;
+    pMainf = pMain + scnt;
     for(k = 0 ; k <119 ; k++){
-      fxy = fxy-i-i-120;
+      fxy = fxy-120+strightDelta+strightDelta;
       if(fxy < 0){
         pMainf = pMainf+320;
         fxy = fxy + 120;
-        if(*pMainf != 0){(*pPixNum)++;}
+        *pMainf = monocolor2;
         }else{
-          pMainf = pMainf+321;
+          pMainf = pMainf+319;
           fxy = fxy - 120;
-          if(*pMainf != 0){(*pPixNum)++;}
+          *pMainf = monocolor2;
           }
       }
-    pPixNum++;
-    }
-  pPixNum -= 119; //無くてもいい
+    }else if(strightDelta == 0){
+      MPLog("drawStrightSub2\n");
+      pMainf = pMain + scnt;
+      for(k = 0 ; k <119 ; k++){
+        pMainf += 320;
+        *pMainf = monocolor2;
+        }
+      }else{
+        fxy = 0;
+        pMainf = pMain + scnt;
+        for(k = 0 ; k <119 ; k++){
+          fxy = fxy+strightDelta+strightDelta+120;
+          if(fxy < 0){
+            pMainf = pMainf+321;
+            fxy = fxy + 120;
+            *pMainf = monocolor2;
+            }else{
+              pMainf = pMainf+320;
+              fxy = fxy - 120;
+              *pMainf = monocolor2;
+              }
+          }
+        }
   }
