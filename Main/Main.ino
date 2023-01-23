@@ -3,7 +3,7 @@
 //#define monocolor 0x7E0
 
 #define pixsize  76800
-uint16_t bmpMain[pixsize] , *bmp ,*pMain ;
+uint16_t *bmp;
 uint16_t stPixNum[239] ={0} , *pPixNum ,maxPixNum;
 uint32_t pixSum1 = 0,pixSum2 = 0, pixAve = 0;
 int i = 0,j = 0,k = 0,m = 0,n = 0,h = 0, strightDelta, strightDelta2;
@@ -103,7 +103,7 @@ MPLog("ポインタSend");
     ret = MP.Send(3, (uint32_t)j, subcre2);    //2-11
     //MP.Send(100, &j, subcre1);
     
-  pMain -= 38400;
+  pfil3 -= 38400;
 //直線ここまで
 
 //SubCore完了
@@ -168,7 +168,6 @@ void stright4(){
   }
 
 void setup() {
-  pMain = bmpMain;
   pfil = filpix;
   pfil2 = pfil + 76800;
   pfil3 = pfil2 + 76800;
