@@ -28,11 +28,10 @@ void loop(){
   ret = MP.Recv(&msgid, &bmp);//1
  //   MPLog("Recv bmp %d\n",ret);
   ret = MP.Recv(&msgid, &pMain);//2
-  MPLog(" pMain1= %d \n", pMain);
  //   MPLog("Recv pMain %d\n",ret);
   ret = MP.Recv(&msgid, &pPixNum);//7
  //   MPLog("Recv pPixNum %d\n",ret);
-  
+
   pMain+=76800;//下担当
   bmp+=76800;//下担当
 //Ave
@@ -74,7 +73,9 @@ void loop(){
 //FILTERRRRRRRRRRRRRRRRR
  //MPLog(" filterST %d\n",ret);
 
-  co[3] = {0};
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
   if(*(pMain-1-320)==0){co[0]++;}
   if(*(pMain-1)==0){co[0]++;}
   if(*(pMain-1+320)==0){co[0]++;}
@@ -97,7 +98,9 @@ void loop(){
     if(count == 3){count = 0;}
     }
 
-  co[3] = {0};
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
   if(*(pMain-1-320)==0){co[0]++;}
   if(*(pMain-320)==0){co[1]++;}
   if(*(pMain+1-320)==0){co[2]++;}
@@ -204,10 +207,9 @@ void strightSub2(){
   }
 
 void drawStrightSub2(){
-  MPLog(" pMain= %d \n", pMain);
+  fxy = 0;
+  pMainf = pMain + scnt; 
   if(strightDelta > 0){
-    fxy = 0;
-    pMainf = pMain + scnt;
     for(k = 0 ; k <119 ; k++){
       fxy = fxy-120+strightDelta+strightDelta;
       if(fxy < 0){
@@ -221,15 +223,11 @@ void drawStrightSub2(){
           }
       }
     }else if(strightDelta == 0){
-      MPLog("drawStrightSub2\n");
-      pMainf = pMain + scnt;
       for(k = 0 ; k <119 ; k++){
         pMainf += 320;
         *pMainf = monocolor2;
         }
       }else{
-        fxy = 0;
-        pMainf = pMain + scnt;
         for(k = 0 ; k <119 ; k++){
           fxy = fxy+strightDelta+strightDelta+120;
           if(fxy < 0){
