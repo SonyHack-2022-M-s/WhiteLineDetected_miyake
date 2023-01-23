@@ -8,6 +8,8 @@ uint16_t stPixNum[239] ={0} , *pPixNum ,maxPixNum;
 uint32_t pixSum1 = 0,pixSum2 = 0, pixAve = 0;
 int i = 0,j = 0,k = 0,m = 0,n = 0,h = 0, strightDelta, strightDelta2;
 bool col = false , st = false , jug1 = false;
+bool filpix[230400], *pfil ,*pfil2 ,*pfil3;
+
 
 unsigned short int count = 0;
 
@@ -23,6 +25,7 @@ uint64_t myTime1,myTime2;
 //#include <inttypes.h>
 
 void CamCB(CamImage img){
+  MPLog("CamCB　start");
   if (!img.isAvailable()) {return;}
   bmp = (uint16_t*)img.getImgBuff();  //bmpはポインタ
   myTime1 = micros();
@@ -32,15 +35,15 @@ void CamCB(CamImage img){
  //   MPLog("Send1 bmp %d\n",ret);
   ret = MP.Send(MY_MSGID, bmp, subcre2);//2-1
  //   MPLog("Send2 bmp %d\n",ret);
-  ret = MP.Send(MY_MSGID, pMain, subcre1);//1-2
+  ret = MP.Send(MY_MSGID, pfil, subcre1);//1-2
  //   MPLog("Send1 pMain %d\n",ret);
-  ret = MP.Send(MY_MSGID, pMain,subcre2);//2-2
+  ret = MP.Send(MY_MSGID, pfil,subcre2);//2-2
  //   MPLog("Send2 pMain %d\n",ret);
   ret = MP.Send(MY_MSGID, pPixNum, subcre1);//1-7
  //   MPLog("Send1 pMain %d\n",ret);
   ret = MP.Send(MY_MSGID, pPixNum,subcre2);//2-7
  //   MPLog("Send2 pMain %d\n",ret);pPixNum
-
+MPLog("ポインタSend");
 
 //平均値計算
   ret = MP.Recv(&msgid, &pixSum1, subcre1);//1-3
@@ -48,20 +51,22 @@ void CamCB(CamImage img){
   pixAve = (pixSum1+pixSum2)/38400;
   ret = MP.Send(MY_MSGID, pixAve, subcre1);//1-4
   ret = MP.Send(MY_MSGID, pixAve, subcre2);//2-4
+  MPLog("平均値計算");
 
 //Filter完了
   ret = MP.Recv(&msgid, &pixSum1, subcre1);//1-5
   ret = MP.Recv(&msgid, &pixSum2, subcre2);//2-5
+  MPLog("Filter完了");
 
 //直線かいし
   i=0;
   j=0;
   count = 0;
   col = false;
-  pMain += 38400;
+  pfil3 += 38400;
   
   for (i = 0; i < 320 ; i++){
-    if(*pMain == 0){
+    if(*pfil3 == 0){
       if(col == true){
         col = false;
         j = (j + i)/2;
@@ -91,9 +96,9 @@ void CamCB(CamImage img){
 //        MPLog(" i-1= %d \n", j);
         }
       }
-    pMain++;
+    pfil3++;
     }
-    pMain = pMain-i;
+    pfil3 = pfil3-i;
     ret = MP.Send(3, (uint32_t)j, subcre1);    //1-11
     ret = MP.Send(3, (uint32_t)j, subcre2);    //2-11
     //MP.Send(100, &j, subcre1);
@@ -113,7 +118,7 @@ void CamCB(CamImage img){
   ret = MP.Recv(&msgid, &msg,3);
   MP.RecvTimeout(MP_RECV_BLOCKING);
   if(ret == 10){
-    ret = MP.Send(MY_MSGID,pMain,3);
+    ret = MP.Send(MY_MSGID,bmp,3);
   }
 }
 
@@ -164,6 +169,9 @@ void stright4(){
 
 void setup() {
   pMain = bmpMain;
+  pfil = filpix;
+  pfil2 = pfil + 76800;
+  pfil3 = pfil2 + 76800;
   pPixNum = stPixNum;
   Serial.begin(115200);
   Serial.println("start");

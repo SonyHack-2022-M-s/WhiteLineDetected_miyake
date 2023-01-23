@@ -9,6 +9,8 @@ uint16_t pixR,pixG,pixB,pixAve = 0,scnt;
 uint32_t pixSum2 = 0,Recv32 = 0;
 int i = 0,j = 0,k = 0,strightDelta;
 
+bool *pfil ,*pfil2 ,*pfil3 ,*pfil3f;
+
 int fxy;
 
 unsigned short int count = 0, co[3];
@@ -27,30 +29,32 @@ void setup() {
 void loop(){
   ret = MP.Recv(&msgid, &bmp);//1
  //   MPLog("Recv bmp %d\n",ret);
-  ret = MP.Recv(&msgid, &pMain);//2
-  MPLog(" pMain1= %d \n", pMain);
+  ret = MP.Recv(&msgid, &pfil);//2
  //   MPLog("Recv pMain %d\n",ret);
   ret = MP.Recv(&msgid, &pPixNum);//7
  //   MPLog("Recv pPixNum %d\n",ret);
   
-  pMain+=76800;//下担当
-  bmp+=76800;//下担当
+  pfil+=38400;//下担当
+  pfil2 = pfil + 76800;
+  pfil3 = pfil2 + 76800;
+  bmp+=38400;//下担当
+  
 //Ave
   for (i = 0; i < pixsize ; i++){
     pixR = (*bmp & 0xF800)>>11;
     pixG = (*bmp & 0x7E0)>>6;
     pixB = (*bmp & 0x1F);
-    *pMain = pixR>pixG ? (pixG>pixB ? pixB:pixG) : (pixR>pixB ? pixB:pixR);
-    pixSum2 += (uint32_t)*pMain;
-    pMain--;
-    bmp--;
+    *bmp = pixR>pixG ? (pixG>pixB ? pixB:pixG) : (pixR>pixB ? pixB:pixR);
+    pixSum2 += (uint32_t)*bmp;
+    bmp++;
   }
+  bmp -= pixsize;
   
   pixSum2 = pixSum2>>1;
 
 
   //MPLog("time2 %"PRIu64"\n",micros());
-  ret = MP.Send(msgid, pixSum2);//3
+  ret = MP.Send(MY_MSGID, pixSum2);//3
  // MPLog("Send pixSum2 %d\n",ret);
   ret = MP.Recv(&msgid, &Recv32);//4
  // MPLog("Recv pixSum1 %d\n",ret);
@@ -64,56 +68,62 @@ void loop(){
 
 //二値化
   for (i = 0; i < pixsize ; i++){
-    *pMain = *pMain>pixAve ? monocolor : 0;
-    pMain++;
+    *pfil = *bmp > pixAve ? true : false;
     bmp++;
+    pfil++;
   }
-  pMain -= pixsize;
   bmp -= pixsize;
+  pfil -= pixsize;
 
 //FILTERRRRRRRRRRRRRRRRR
  //MPLog(" filterST %d\n",ret);
 
-  co[3] = {0};
-  if(*(pMain-1-320)==0){co[0]++;}
-  if(*(pMain-1)==0){co[0]++;}
-  if(*(pMain-1+320)==0){co[0]++;}
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
+  count = 0;
+  if(*(pfil-1-320)==0){co[0]++;}
+  if(*(pfil-1)==0){co[0]++;}
+  if(*(pfil-1+320)==0){co[0]++;}
   
-  if(*(pMain-320)==0){co[1]++;}
-  if(*(pMain)==0){co[1]++;}
-  if(*(pMain+320)==0){co[1]++;}
+  if(*(pfil-320)==0){co[1]++;}
+  if(*(pfil)==0){co[1]++;}
+  if(*(pfil+320)==0){co[1]++;}
 
-  if(*(pMain+1-320)==0){co[2]++;}
-  if(*(pMain+1)==0){co[2]++;}
-  if(*(pMain+1+320)==0){co[2]++;}
+  if(*(pfil+1-320)==0){co[2]++;}
+  if(*(pfil+1)==0){co[2]++;}
+  if(*(pfil+1+320)==0){co[2]++;}
 
   for(i = 0; i < pixsize-321 ; i++){
-    *(pMain+i) = (co[0]+co[1]+co[2])>4 ? 0:monocolor;
+    *(pfil2+i) = (co[0]+co[1]+co[2])>4 ? false : true;
     co[count] = 0;
-    if(*(pMain+i+2-320)==0){co[count]++;}
-    if(*(pMain+i+2)==0){co[count]++;}
-    if(*(pMain+i+2+320)==0){co[count]++;}
+    if(*(pfil+i+2-320)==0){co[count]++;}
+    if(*(pfil+i+2)==0){co[count]++;}
+    if(*(pfil+i+2+320)==0){co[count]++;}
     count++;
     if(count == 3){count = 0;}
     }
 
-  co[3] = {0};
-  if(*(pMain-1-320)==0){co[0]++;}
-  if(*(pMain-320)==0){co[1]++;}
-  if(*(pMain+1-320)==0){co[2]++;}
-  if(*(pMain-1)==0){co[0]++;}
-  if(*(pMain)==0){co[1]++;}
-  if(*(pMain+1)==0){co[2]++;}
-  if(*(pMain-1+320)==0){co[0]++;}
-  if(*(pMain+320)==0){co[1]++;}
-  if(*(pMain+1+320)==0){co[2]++;}
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
+  count = 0;
+  if(*(pfil2-1-320)==0){co[0]++;}
+  if(*(pfil2-320)==0){co[1]++;}
+  if(*(pfil2+1-320)==0){co[2]++;}
+  if(*(pfil2-1)==0){co[0]++;}
+  if(*(pfil2)==0){co[1]++;}
+  if(*(pfil2+1)==0){co[2]++;}
+  if(*(pfil2-1+320)==0){co[0]++;}
+  if(*(pfil2+320)==0){co[1]++;}
+  if(*(pfil2+1+320)==0){co[2]++;}
 
   for(i = 0; i < pixsize-321 ; i++){
-    *(pMain+i) = (co[0]+co[1]+co[2])>4 ? 0:monocolor;
+    *(pfil3+i) = (co[0]+co[1]+co[2])>4 ? false : true;
     co[count] = 0;
-    if(*(pMain+i+2-320)==0){co[count]++;}
-    if(*(pMain+i+2)==0){co[count]++;}
-    if(*(pMain+i+2+320)==0){co[count]++;}
+    if(*(pfil2+i+2-320)==0){co[count]++;}
+    if(*(pfil2+i+2)==0){co[count]++;}
+    if(*(pfil2+i+2+320)==0){co[count]++;}
     count++;
     if(count == 3){count = 0;}
     }
@@ -161,42 +171,42 @@ void strightSub2(){
 //dx>0
   for(i = 119; i > 0  ; i--){
     fxy = 0;
-    pMainf = pMain + scnt;
+    pfil3f = pfil3 + scnt;
     for(k = 0 ; k <118 ; k++){
       fxy = fxy-120+i+i;
       if(fxy < 0){
-        pMainf = pMainf+320;
+        pfil3f = pfil3f+320;
         fxy = fxy + 120;
-        if(*pMainf != 0){(*pPixNum)++;}
+        if(*pfil3f != 0){(*pPixNum)++;}
         }else{
-          pMainf = pMainf+319;
+          pfil3f = pfil3f+319;
           fxy = fxy - 120;
-          if(*pMainf != 0){(*pPixNum)++;}
+          if(*pfil3f != 0){(*pPixNum)++;}
           }
       }
     pPixNum--;
     }
 //dx=0
-  pMainf = pMain + scnt;
+  pfil3f = pfil3 + scnt;
   for(k = 0 ; k <118 ; k++){
-    pMainf += 320;
-    if(*pMainf != 0){(*pPixNum)++;}
+    pfil3f += 320;
+    if(*pfil3f != 0){(*pPixNum)++;}
     }
   pPixNum--;
 //dx<0
   for(i = 1; i > -119 ; i--){
     fxy = 0;
-    pMainf = pMain + scnt;
+    pfil3f = pfil3 + scnt;
     for(k = 0 ; k <119 ; k++){
       fxy = fxy+i+i+120;
       if(fxy < 0){
-        pMainf = pMainf+321;
+        pfil3f = pfil3f+321;
         fxy = fxy + 120;
-        if(*pMainf != 0){(*pPixNum)++;}
+        if(*pfil3f != 0){(*pPixNum)++;}
         }else{
-          pMainf = pMainf+320;
+          pfil3f = pfil3f+320;
           fxy = fxy - 120;
-          if(*pMainf != 0){(*pPixNum)++;}
+          if(*pfil3f != 0){(*pPixNum)++;}
           }
       }
     pPixNum--;
@@ -204,10 +214,10 @@ void strightSub2(){
   }
 
 void drawStrightSub2(){
+  pMainf = bmp + scnt;
+  fxy = 0;
   MPLog(" pMain= %d \n", pMain);
   if(strightDelta > 0){
-    fxy = 0;
-    pMainf = pMain + scnt;
     for(k = 0 ; k <119 ; k++){
       fxy = fxy-120+strightDelta+strightDelta;
       if(fxy < 0){
@@ -221,15 +231,11 @@ void drawStrightSub2(){
           }
       }
     }else if(strightDelta == 0){
-      MPLog("drawStrightSub2\n");
-      pMainf = pMain + scnt;
       for(k = 0 ; k <119 ; k++){
         pMainf += 320;
         *pMainf = monocolor2;
         }
       }else{
-        fxy = 0;
-        pMainf = pMain + scnt;
         for(k = 0 ; k <119 ; k++){
           fxy = fxy+strightDelta+strightDelta+120;
           if(fxy < 0){
@@ -244,3 +250,4 @@ void drawStrightSub2(){
           }
         }
   }
+  

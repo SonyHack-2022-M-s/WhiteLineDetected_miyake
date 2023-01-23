@@ -9,6 +9,8 @@ uint16_t pixR,pixG,pixB,pixAve = 0,scnt;
 uint32_t pixSum1 = 0,Recv32 = 0;
 int i = 0,j = 0,k = 0,strightDelta;
 
+bool *pfil ,*pfil2 ,*pfil3 ,*pfil3f;
+
 int fxy;
 
 unsigned short int count = 0, co[3];
@@ -27,22 +29,25 @@ void setup() {
 void loop() {
   ret = MP.Recv(&msgid, &bmp);//1
  //   MPLog("Recv bmp %d\n",ret);
-  ret = MP.Recv(&msgid, &pMain);//2 
+  ret = MP.Recv(&msgid, &pfil);//2 
  //   MPLog("Recv pMain %d\n",ret);
   ret = MP.Recv(&msgid, &pPixNum);//7
  //   MPLog("Recv pPixNum %d\n",ret);
+
+ pfil2 = pfil + 76800;
+ pfil3 = pfil2 + 76800;
 
 //Ave
   for (i = 0; i < pixsize ; i++){
     pixR = (*bmp & 0xF800)>>11;
     pixG = (*bmp & 0x7E0)>>6;
     pixB = (*bmp & 0x1F);
-    *pMain = pixR>pixG ? (pixG>pixB ? pixB:pixG) : (pixR>pixB ? pixB:pixR);
-    pixSum1 += (uint32_t)*pMain;
-    pMain++;
+    *bmp = pixR>pixG ? (pixG>pixB ? pixB:pixG) : (pixR>pixB ? pixB:pixR);
+    pixSum1 += (uint32_t)*bmp;
     bmp++;
   }
-//  pMain -= pixsize; 二値化は下からやる勢
+  bmp -= pixsize;
+//  pfil2 -= pixsize; 二値化は下からやる勢
 //  bmp -= pixsize;
   
   pixSum1 = pixSum1>>1;
@@ -62,57 +67,66 @@ void loop() {
 
 //二値化
   for (i = 0; i < pixsize ; i++){
-    *pMain = *pMain>pixAve ? monocolor : 0;
-    pMain--;
-    bmp--;
+    *pfil = *bmp > pixAve ? true : false;
+    bmp++;
+    pfil++;
   }
-
+  bmp -= pixsize;
+  pfil -= pixsize;
+  
 //FILTERRRRRRRRRRRRRRRRR
  //MPLog(" filterST %d\n",ret);
 
-  co[3] = {0};
-  if(*(pMain+320-320)==0){co[0]++;}
-  if(*(pMain+320)==0){co[0]++;}
-  if(*(pMain+320+320)==0){co[0]++;}
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
+  count = 0;
+  if(*(pfil+320-320)==0){co[0]++;}
+  if(*(pfil+320)==0){co[0]++;}
+  if(*(pfil+320+320)==0){co[0]++;}
   
-  if(*(pMain+321-320)==0){co[1]++;}
-  if(*(pMain+321)==0){co[1]++;}
-  if(*(pMain+321+320)==0){co[1]++;}
+  if(*(pfil+321-320)==0){co[1]++;}
+  if(*(pfil+321)==0){co[1]++;}
+  if(*(pfil+321+320)==0){co[1]++;}
 
-  if(*(pMain+322-320)==0){co[2]++;}
-  if(*(pMain+322)==0){co[2]++;}
-  if(*(pMain+322+320)==0){co[2]++;}
+  if(*(pfil+322-320)==0){co[2]++;}
+  if(*(pfil+322)==0){co[2]++;}
+  if(*(pfil+322+320)==0){co[2]++;}
 
   for(i = 321; i < pixsize ; i++){
-    *(pMain+i) = (co[0]+co[1]+co[2])>4 ? 0:monocolor;
+    *(pfil2+i) = (co[0]+co[1]+co[2])>4 ? false : true;
     
     co[count] = 0;
-    if(*(pMain+i+2-320)==0){co[count]++;}
-    if(*(pMain+i+2)==0){co[count]++;}
-    if(*(pMain+i+2+320)==0){co[count]++;}
+    if(*(pfil+i+2-320)==0){co[count]++;}
+    if(*(pfil+i+2)==0){co[count]++;}
+    if(*(pfil+i+2+320)==0){co[count]++;}
     count++;
     if(count == 3){count = 0;}
     }
+    
 
 
-  co[3] = {0};
-  if(*(pMain+320-320)==0){co[0]++;}
-  if(*(pMain+321-320)==0){co[1]++;}
-  if(*(pMain+322-320)==0){co[2]++;}
-  if(*(pMain+320)==0){co[0]++;}
-  if(*(pMain+321)==0){co[1]++;}
-  if(*(pMain+322)==0){co[2]++;}
-  if(*(pMain+320+320)==0){co[0]++;}
-  if(*(pMain+321+320)==0){co[1]++;}
-  if(*(pMain+322+320)==0){co[2]++;}
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
+  count = 0;
+  if(*(pfil2+320-320)==0){co[0]++;}
+  if(*(pfil2+321-320)==0){co[1]++;}
+  if(*(pfil2+322-320)==0){co[2]++;}
+  if(*(pfil2+320)==0){co[0]++;}
+  if(*(pfil2+321)==0){co[1]++;}
+  if(*(pfil2+322)==0){co[2]++;}
+  if(*(pfil2+320+320)==0){co[0]++;}
+  if(*(pfil2+321+320)==0){co[1]++;}
+  if(*(pfil2+322+320)==0){co[2]++;}
 
   for(i = 321; i < pixsize ; i++){
-    *(pMain+i) = (co[0]+co[1]+co[2])>4 ? 0:monocolor;
+    *(pfil3+i) = (co[0]+co[1]+co[2])>4 ? false : true;
     
     co[count] = 0;
-    if(*(pMain+i+2-320)==0){co[count]++;}
-    if(*(pMain+i+2)==0){co[count]++;}
-    if(*(pMain+i+2+320)==0){co[count]++;}
+    if(*(pfil2+i+2-320)==0){co[count]++;}
+    if(*(pfil2+i+2)==0){co[count]++;}
+    if(*(pfil2+i+2+320)==0){co[count]++;}
     count++;
     if(count == 3){count = 0;}
     }
@@ -139,15 +153,15 @@ void loop() {
   //輪郭
   tmp =0;
   for (i = 0; i < pixsize ; i++){
-    if (*pMain == tmp){
-      *pMain = 0;
+    if (*pfil2 == tmp){
+      *pfil2 = 0;
     }else{
-      tmp =*pMain;
-      *pMain = monocolor;
+      tmp =*pfil2;
+      *pfil2 = true;
       }
-    pMain++;
+    pfil2++;
   }
-  pMain -= pixsize;
+  pfil2 -= pixsize;
 */
 
 
@@ -160,42 +174,42 @@ void strightSub1(){
 //dx<0
   for(i = -119; i < 0 ; i++){
     fxy = 0;
-    pMainf = pMain + 38400 + scnt;
+    pfil3f = pfil3 + 38400 + scnt;
     for(k = 0 ; k <119 ; k++){
       fxy = fxy-i-i-120;
       if(fxy < 0){
-        pMainf = pMainf-320;
+        pfil3f = pfil3f-320;
         fxy = fxy + 120;
-        if(*pMainf != 0){(*pPixNum)++;}
+        if(*pfil3f != 0){(*pPixNum)++;}
         }else{
-          pMainf = pMainf-321;
+          pfil3f = pfil3f-321;
           fxy = fxy - 120;
-          if(*pMainf != 0){(*pPixNum)++;}
+          if(*pfil3f != 0){(*pPixNum)++;}
           }
       }
     pPixNum++;
     }
 //dx=0
-  pMainf = pMain + 38400 + scnt;
+  pfil3f = pfil3 + 38400 + scnt;
   for(k = 0 ; k <119 ; k++){
-    pMainf -= 320;
-    if(*pMainf != 0){(*pPixNum)++;}
+    pfil3f -= 320;
+    if(*pfil3f != 0){(*pPixNum)++;}
     }
   pPixNum++;
 //dx>0
   for(i = 1; i < 120 ; i++){
     fxy = 0;
-    pMainf = pMain + 38400 + scnt;
+    pfil3f = pfil3 + 38400 + scnt;
     for(k = 0 ; k <119 ; k++){
       fxy = fxy+120-i-i;
       if(fxy < 0){
-        pMainf = pMainf-319;
+        pfil3f = pfil3f-319;
         fxy = fxy + 120;
-        if(*pMainf != 0){(*pPixNum)++;}
+        if(*pfil3f != 0){(*pPixNum)++;}
         }else{
-          pMainf = pMainf-320;
+          pfil3f = pfil3f-320;
           fxy = fxy - 120;
-          if(*pMainf != 0){(*pPixNum)++;}
+          if(*pfil3f != 0){(*pPixNum)++;}
           }
       }
     pPixNum++;
@@ -204,10 +218,10 @@ void strightSub1(){
   }
 
 void drawStrightSub1(){
+  pMainf = bmp + 38400 + scnt;
+  fxy = 0;
   MPLog(" pMain= %d \n", pMain);
   if(strightDelta < 0){
-    fxy = 0;
-    pMainf = pMain + 38400 + scnt;
     for(k = 0 ; k <119 ; k++){
       fxy = fxy-strightDelta-strightDelta-120;
       if(fxy < 0){
@@ -221,14 +235,11 @@ void drawStrightSub1(){
           }
       }
     }else if(strightDelta == 0){
-      pMainf = pMain + 38400 + scnt;
       for(k = 0 ; k <119 ; k++){
         pMainf -= 320;
         *pMainf = monocolor2;
         }
       }else{
-        fxy = 0;
-        pMainf = pMain + 38400 + scnt;
         for(k = 0 ; k <119 ; k++){
           fxy = fxy+120-strightDelta-strightDelta;
           if(fxy < 0){
@@ -243,13 +254,4 @@ void drawStrightSub1(){
           }
         }
   }
-
-
-
-
-
-
-
-
-
   
