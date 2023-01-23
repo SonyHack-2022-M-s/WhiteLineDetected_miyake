@@ -70,7 +70,9 @@ void loop() {
 //FILTERRRRRRRRRRRRRRRRR
  //MPLog(" filterST %d\n",ret);
 
-  co[3] = {0};
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
   if(*(pMain+320-320)==0){co[0]++;}
   if(*(pMain+320)==0){co[0]++;}
   if(*(pMain+320+320)==0){co[0]++;}
@@ -95,7 +97,9 @@ void loop() {
     }
 
 
-  co[3] = {0};
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
   if(*(pMain+320-320)==0){co[0]++;}
   if(*(pMain+321-320)==0){co[1]++;}
   if(*(pMain+322-320)==0){co[2]++;}
@@ -204,10 +208,9 @@ void strightSub1(){
   }
 
 void drawStrightSub1(){
-  MPLog(" pMain= %d \n", pMain);
+  fxy = 0;
+  pMainf = pMain + 38400 + scnt;
   if(strightDelta < 0){
-    fxy = 0;
-    pMainf = pMain + 38400 + scnt;
     for(k = 0 ; k <119 ; k++){
       fxy = fxy-strightDelta-strightDelta-120;
       if(fxy < 0){
@@ -221,14 +224,11 @@ void drawStrightSub1(){
           }
       }
     }else if(strightDelta == 0){
-      pMainf = pMain + 38400 + scnt;
       for(k = 0 ; k <119 ; k++){
         pMainf -= 320;
         *pMainf = monocolor2;
         }
       }else{
-        fxy = 0;
-        pMainf = pMain + 38400 + scnt;
         for(k = 0 ; k <119 ; k++){
           fxy = fxy+120-strightDelta-strightDelta;
           if(fxy < 0){
@@ -244,12 +244,3 @@ void drawStrightSub1(){
         }
   }
 
-
-
-
-
-
-
-
-
-  
