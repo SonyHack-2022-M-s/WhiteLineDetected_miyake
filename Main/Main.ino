@@ -7,7 +7,7 @@ uint16_t *bmp;
 uint16_t stPixNum[239] ={0} , *pPixNum ,maxPixNum;
 uint32_t pixSum1 = 0,pixSum2 = 0, pixAve = 0;
 int i = 0,j = 0,k = 0,m = 0,n = 0,h = 0, strightDelta, strightDelta2;
-bool col = false , st = false , jug1 = false;
+bool col = false , st = false , jug1 = false ,jug2 = false;
 bool filpix[230400], *pfil ,*pfil2 ,*pfil3;
 
 
@@ -25,7 +25,7 @@ uint64_t myTime1,myTime2;
 //#include <inttypes.h>
 
 void CamCB(CamImage img){
-  MPLog("CamCB　start");
+  //MPLog("CamCB　start");
   if (!img.isAvailable()) {return;}
   bmp = (uint16_t*)img.getImgBuff();  //bmpはポインタ
   myTime1 = micros();
@@ -43,7 +43,7 @@ void CamCB(CamImage img){
  //   MPLog("Send1 pMain %d\n",ret);
   ret = MP.Send(MY_MSGID, pPixNum,subcre2);//2-7
  //   MPLog("Send2 pMain %d\n",ret);pPixNum
-MPLog("ポインタSend");
+//MPLog("ポインタSend");
 
 //平均値計算
   ret = MP.Recv(&msgid, &pixSum1, subcre1);//1-3
@@ -51,12 +51,15 @@ MPLog("ポインタSend");
   pixAve = (pixSum1+pixSum2)/38400;
   ret = MP.Send(MY_MSGID, pixAve, subcre1);//1-4
   ret = MP.Send(MY_MSGID, pixAve, subcre2);//2-4
-  MPLog("平均値計算");
+  //MPLog("平均値計算");
 
 //Filter完了
   ret = MP.Recv(&msgid, &pixSum1, subcre1);//1-5
   ret = MP.Recv(&msgid, &pixSum2, subcre2);//2-5
-  MPLog("Filter完了");
+  //MPLog("Filter完了");
+
+  BooltoBmp(pfil2,0x7FF);
+  BooltoBmp(pfil3,0x1F); ///BOOL確認用関数
 
 //直線かいし
   i=0;
@@ -71,7 +74,7 @@ MPLog("ポインタSend");
         col = false;
         j = (j + i)/2;
 //        MPLog(" i= %d \n", i);
-        MPLog(" j= %d \n", j);
+//        MPLog(" j= %d \n", j);
 //        for(m = 0 ; m < 239 ; m++){stPixNum[m] = 0;}//初期化 218234885
         ret = MP.Send(1, (uint32_t)j, subcre1);//1-11
         ret = MP.Send(1, (uint32_t)j, subcre2);//2-11
@@ -111,7 +114,7 @@ MPLog("ポインタSend");
   ret = MP.Recv(&msgid, &msg, subcre2);//2-6
 
   myTime2 = micros();
-//  MPLog(",%"PRIu64",%"PRIu64"\n", myTime1, myTime2);
+  MPLog(",%"PRIu64",%"PRIu64"\n", myTime1, myTime2);
 
 //LCD Core3
   MP.RecvTimeout(MP_RECV_POLLING);
@@ -130,7 +133,7 @@ void stright3(){
       if(st == true){
         st = false;
         strightDelta = (strightDelta + n )/2;
-        MPLog("strightDelta = %d\n", strightDelta);
+        //MPLog("strightDelta = %d\n", strightDelta);
         jug1 = true;
         break;
         }
@@ -152,6 +155,7 @@ void stright3(){
 
 void stright4(){
   jug1 = false;
+  jug2 = false;
   maxPixNum = 0;
   strightDelta = 0;
   for(n = 0; n < 239 ; n++){
@@ -159,11 +163,15 @@ void stright4(){
       strightDelta = n;
       maxPixNum = *pPixNum;
       jug1 = true;
-      }else if(*pPixNum == maxPixNum){strightDelta2 = n;}
+      jug2 = false;
+      }else if(*pPixNum == maxPixNum){
+        strightDelta2 = n;
+        jug2 = true;
+        }
     *pPixNum = 0;
     pPixNum++;
     }
-  strightDelta = (strightDelta + strightDelta2)/2;
+  if(jug2 == true){strightDelta = (strightDelta + strightDelta2)/2;}
   pPixNum -= 239;
   }
 
@@ -188,6 +196,21 @@ void setup() {
     );
   theCamera.startStreaming(true, CamCB);
 }
+
+///BOOL確認用関数
+
+void BooltoBmp(bool *pfn , uint16_t color){
+  for(i = 0 ; i < pixsize ; i++){
+    if(*pfn == true){
+      *bmp = color;
+      }
+    pfn++;
+    bmp++;
+    }
+  pfn -= pixsize;
+  bmp -= pixsize;
+  }
+
 
 void loop() {
   // put your main code here, to run repeatedly:

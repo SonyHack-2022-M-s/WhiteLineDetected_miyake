@@ -77,56 +77,14 @@ void loop(){
 
 //FILTERRRRRRRRRRRRRRRRR
  //MPLog(" filterST %d\n",ret);
-
-  co[0] = 0;
-  co[1] = 0;
-  co[2] = 0;
-  count = 0;
-  if(*(pfil-1-320)==0){co[0]++;}
-  if(*(pfil-1)==0){co[0]++;}
-  if(*(pfil-1+320)==0){co[0]++;}
-  
-  if(*(pfil-320)==0){co[1]++;}
-  if(*(pfil)==0){co[1]++;}
-  if(*(pfil+320)==0){co[1]++;}
-
-  if(*(pfil+1-320)==0){co[2]++;}
-  if(*(pfil+1)==0){co[2]++;}
-  if(*(pfil+1+320)==0){co[2]++;}
-
-  for(i = 0; i < pixsize-321 ; i++){
-    *(pfil2+i) = (co[0]+co[1]+co[2])>4 ? false : true;
-    co[count] = 0;
-    if(*(pfil+i+2-320)==0){co[count]++;}
-    if(*(pfil+i+2)==0){co[count]++;}
-    if(*(pfil+i+2+320)==0){co[count]++;}
-    count++;
-    if(count == 3){count = 0;}
+  MedianF(pfil , pfil2);
+  for(i = 0 ; i < pixsize ; i++){
+    *pfil3 = false;
+    pfil3++;
     }
+    pfil3 -= pixsize;
+  miredu(pfil2 , pfil3);
 
-  co[0] = 0;
-  co[1] = 0;
-  co[2] = 0;
-  count = 0;
-  if(*(pfil2-1-320)==0){co[0]++;}
-  if(*(pfil2-320)==0){co[1]++;}
-  if(*(pfil2+1-320)==0){co[2]++;}
-  if(*(pfil2-1)==0){co[0]++;}
-  if(*(pfil2)==0){co[1]++;}
-  if(*(pfil2+1)==0){co[2]++;}
-  if(*(pfil2-1+320)==0){co[0]++;}
-  if(*(pfil2+320)==0){co[1]++;}
-  if(*(pfil2+1+320)==0){co[2]++;}
-
-  for(i = 0; i < pixsize-321 ; i++){
-    *(pfil3+i) = (co[0]+co[1]+co[2])>4 ? false : true;
-    co[count] = 0;
-    if(*(pfil2+i+2-320)==0){co[count]++;}
-    if(*(pfil2+i+2)==0){co[count]++;}
-    if(*(pfil2+i+2+320)==0){co[count]++;}
-    count++;
-    if(count == 3){count = 0;}
-    }
   ret = MP.Send(msgid, 10);//5
 
 //stright center st
@@ -134,7 +92,6 @@ void loop(){
   while(ret != 3){
     if(ret == 1){
     scnt = (uint16_t)Recv32;
-    MPLog(" msgid= %d \n", scnt);
     strightSub2();
     }else{
       strightDelta = (int)Recv32-119;
@@ -249,4 +206,53 @@ void drawStrightSub2(){
           }
         }
   }
-  
+
+void MedianF(bool *pfn2 , bool *pfn3){
+  co[0] = 0;
+  co[1] = 0;
+  co[2] = 0;
+  count = 0;
+  if(*(pfn2-1-320)==0){co[0]++;}
+  if(*(pfn2-320)==0){co[1]++;}
+  if(*(pfn2+1-320)==0){co[2]++;}
+  if(*(pfn2-1)==0){co[0]++;}
+  if(*(pfn2)==0){co[1]++;}
+  if(*(pfn2+1)==0){co[2]++;}
+  if(*(pfn2-1+320)==0){co[0]++;}
+  if(*(pfn2+320)==0){co[1]++;}
+  if(*(pfn2+1+320)==0){co[2]++;}
+
+  for(i = 0; i < pixsize-321 ; i++){
+    *(pfn3+i) = (co[0]+co[1]+co[2])>4 ? false : true;
+    co[count] = 0;
+    if(*(pfn2+i+2-320)==0){co[count]++;}
+    if(*(pfn2+i+2)==0){co[count]++;}
+    if(*(pfn2+i+2+320)==0){co[count]++;}
+    count++;
+    if(count == 3){count = 0;}
+    }
+  }
+
+void miredu(bool *pfn2 , bool *pfn3){
+  bool jug1 = false;
+  for(i = 2 ; i < pixsize-2 ; i++){
+    if(*(pfn2 + i) == true){
+      if(jug1 == false){
+        jug1 = true;
+        j = i;
+        }
+      }else{
+        if(jug1 == true){
+          jug1 = false;
+          if(i-j > 5){
+            k = (i + j) / 2;
+            *(pfn3 + k-2) = true;
+            *(pfn3 + k-1) = true;
+            *(pfn3 + k) = true;
+            *(pfn3 + k+1) = true;
+            *(pfn3 + k+2) = true;
+            }
+        }
+        }
+    }
+  }
