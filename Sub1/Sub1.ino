@@ -6,7 +6,7 @@
 #define pixsize  38400 //76800/2
 uint16_t *bmp, *pMainf, *pPixNum;
 uint16_t pixR,pixG,pixB,pixAve = 0,scnt;
-uint32_t pixSum1 = 0,Recv32 = 0;
+uint32_t pixSum1 = 0,Recv32 = 0,*pH;
 int i = 0,j = 0,k = 0,strightDelta;
 
 bool *pfil ,*pfil2 ,*pfil3 ,*pfil3f;
@@ -33,25 +33,35 @@ void loop() {
  //   MPLog("Recv pMain %d\n",ret);
   ret = MP.Recv(&msgid, &pPixNum);//7
  //   MPLog("Recv pPixNum %d\n",ret);
+  ret = MP.Recv(&msgid, &pH);//a1
 
  pfil2 = pfil + 76800;
  pfil3 = pfil2 + 76800;
 
 //Ave
+//  pixSum1 = 0;
   for (i = 0; i < pixsize ; i++){
+    
+    pixR = *bmp >> 11;
+    pixG = (*bmp >> 6) & 0x1F;
+    pixB = *bmp & 0x1F;
+    /*
     pixR = (*bmp >> 5) & 0x7C0;
     pixG = *bmp & 0x7C0;
     pixB = (*bmp << 6) & 0x7C0;
+    */
     *bmp = pixR>pixG ? (pixG>pixB ? pixB:pixG) : (pixR>pixB ? pixB:pixR);
-    pixSum1 += (uint32_t)*bmp;
+//    pixSum1 += (uint32_t)*bmp;
+    *(pH + *bmp) += 1;
+    if(*bmp > 31){MPLog("over??????????????????????????????????????????????????");}
+    if(*bmp < 0){MPLog("under??????????????????????????????????????????????????");}
     bmp++;
   }
   bmp -= pixsize;
 //  pfil2 -= pixsize; 二値化は下からやる勢
-//  bmp -= pixsize;
-  
-  pixSum1 = pixSum1>>1;
+//  bmp -= pixsize;二値化は下からやる勢
 
+//  pixSum1 = pixSum1>>1;
 
  // MPLog("time1 %"PRIu64"\n",micros());
   ret = MP.Send(MY_MSGID, pixSum1);//3
@@ -119,7 +129,7 @@ void loop() {
 
 
 //MPLog("time2 %"PRIu64"\n",micros());
-  ret = MP.Send(msgid, 10);//6
+  //ret = MP.Send(msgid, 10);//6
   // put your main code here, to run repeatedly:
 }
 

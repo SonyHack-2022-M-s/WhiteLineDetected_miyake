@@ -5,7 +5,8 @@
 #define pixsize  76800
 uint16_t *bmp;
 uint16_t stPixNum[239] ={0} , *pPixNum ,maxPixNum;
-uint32_t pixSum1 = 0,pixSum2 = 0, pixAve = 0;
+uint32_t pixSum1 = 0,pixSum2 = 0, pixAve = 0 ,*pH1 , H1[32] = {0};
+uint32_t *pH2 , H2[32] = {0} , S1 , S2 ,omega1 ,omega2 , otMax, ot ,otsu, avedif;
 int i = 0,j = 0,k = 0,m = 0,n = 0,h = 0, strightDelta, strightDelta2;
 bool col = false , st = false , jug1 = false ,jug2 = false;
 bool filpix[230400], *pfil ,*pfil2 ,*pfil3;
@@ -43,24 +44,75 @@ void CamCB(CamImage img){
  //   MPLog("Send1 pMain %d\n",ret);
   ret = MP.Send(MY_MSGID, pPixNum,subcre2);//2-7
  //   MPLog("Send2 pMain %d\n",ret);pPixNum
-//MPLog("ポインタSend");
 
+  ret = MP.Send(MY_MSGID, pH1, subcre1);//1-a1
+  ret = MP.Send(MY_MSGID, pH2, subcre2);//2-a1
+//MPLog("ポインタSend");
 //平均値計算
   ret = MP.Recv(&msgid, &pixSum1, subcre1);//1-3
   ret = MP.Recv(&msgid, &pixSum2, subcre2);//2-3
+
+
+//ヒストグラム描写
+  MPLog("\n\n");
+  for(i = 0 ; i < 32 ; i++){
+    MPLog("[%d],%d,\n" ,i, *pH1 + *pH2);
+    pH1 ++;
+    pH2 ++;
+    }
+    pH1 -= 32;
+    pH2 -= 32;
+
+//大津の二値化
+    S1 = *pH1 + *pH2;
+    S2 = pixsize - (*pH1 + *pH2);
+    *pH1 = 0;
+    *pH2 = 0;
+    pH1 ++;
+    pH2 ++;
+    //MPLog("[S1S2],%d,%d,\n" ,S1,S2);
+    omega1 = 1;
+    omega2 = 31;
+    avedif = S1/omega1>S2/omega2 ? (S1/omega1 - S2/omega2)>>5 :(S2/omega2 - S1/omega1)>>5;
+    //MPLog("[avedif],%d,\n" ,avedif);
+    otMax = 0;//omega1*omega2*avedif*avedif
+    MPLog("[ot],%u,\n" ,otMax);
+    otsu = 0;
+    for(i = 1 ;i < 31 ; i++){
+      S1 += *pH1 + *pH2;
+      S2 -= *pH1 + *pH2;
+      *pH1 = 0;
+      *pH2 = 0;
+      pH1 ++;
+      pH2 ++;
+      omega1 += 1;
+      omega2 -= 1;
+      avedif = S1/omega1>S2/omega2 ? (S1/omega1 - S2/omega2)>>5 :(S2/omega2 - S1/omega1)>>5;
+      //MPLog("[avedif],%u,\n" ,avedif);
+      //MPLog("[S1S2],%d,%d,\n" ,S1,S2);
+      ot = omega1*omega2*avedif*avedif;
+      MPLog("[ot],%u,\n" ,ot);
+      if(ot>otMax){
+        otMax = ot;
+        otsu = i;
+        }
+      }
+    pH1 -= 31;//間の数
+    pH2 -= 31;//間の数
+    MPLog("[otsu],%u,\n" ,otsu);
+
+//平均値計算
   pixAve = (pixSum1+pixSum2)/38400;
-  ret = MP.Send(MY_MSGID, pixAve, subcre1);//1-4
-  ret = MP.Send(MY_MSGID, pixAve, subcre2);//2-4
+  ret = MP.Send(MY_MSGID, otsu, subcre1);//1-4
+  ret = MP.Send(MY_MSGID, otsu, subcre2);//2-4
   //MPLog("平均値計算");
 
 //Filter完了
   ret = MP.Recv(&msgid, &pixSum1, subcre1);//1-5
   ret = MP.Recv(&msgid, &pixSum2, subcre2);//2-5
   //MPLog("Filter完了");
-
   BooltoBmp(pfil2,0x7FF);
   BooltoBmp(pfil3,0x1F); ///BOOL確認用関数
-
 //直線かいし
   i=0;
   j=0;
@@ -110,11 +162,10 @@ void CamCB(CamImage img){
 //直線ここまで
 
 //SubCore完了
-  ret = MP.Recv(&msgid, &msg, subcre1);//1-6
-  ret = MP.Recv(&msgid, &msg, subcre2);//2-6
+  //ret = MP.Recv(&msgid, &msg, subcre1);//1-6
+  //ret = MP.Recv(&msgid, &msg, subcre2);//2-6
 
   myTime2 = micros();
-  MPLog(",%"PRIu64",%"PRIu64"\n", myTime1, myTime2);
 
 //LCD Core3
   MP.RecvTimeout(MP_RECV_POLLING);
@@ -123,6 +174,7 @@ void CamCB(CamImage img){
   if(ret == 10){
     ret = MP.Send(MY_MSGID,bmp,3);
   }
+  //MPLog(",%"PRIu64",%"PRIu64"\n", myTime1, myTime2);
 }
 
 void stright3(){
@@ -180,6 +232,8 @@ void setup() {
   pfil2 = pfil + 76800;
   pfil3 = pfil2 + 76800;
   pPixNum = stPixNum;
+  pH1 = H1;
+  pH2 = H2;
   Serial.begin(115200);
   Serial.println("start");
 
